@@ -14,6 +14,7 @@
            #:*http-read-timeout*
            #:*http-connect-timeout*
            #:fetch-schema
+           #:store-reference
 
            ;; conditions
            #:remote-reference-error
@@ -373,6 +374,18 @@
                  :uri uri)))
       (error 'fetching-not-allowed-error
              :uri uri)))
+
+
+(defun store-reference (parsed-schema)
+  "Takes a parsed schema from json-schema.parse:parse and inserts it into the context. The parsed schema should have a reasonable id defined in it.  This function is helpful when you want to load a bunch of schemas, but don't want to allow network access."
+  (flet ((store-schema (uri schema)
+           (setf (gethash uri (context-references *context*)) schema)
+           (populate-named-references-for-schema schema
+                                                 :id-fun #'default-id-fun
+                                                 :uri (quri:uri uri))
+           schema))
+    (store-schema (default-id-fun parsed-schema) parsed-schema)))
+
 
 
 (defun fetch-reference (uri)
